@@ -173,6 +173,12 @@ class TrackerViewModel(private val database: AppDatabase) : ViewModel() {
         }
     }
     
+    fun updateLog(log: Log) {
+        viewModelScope.launch {
+            logDao.updateLog(log)
+        }
+    }
+    
     fun deleteLog(log: Log) {
         viewModelScope.launch {
             logDao.deleteLog(log)

@@ -30,6 +30,7 @@ import com.patrykandpatrick.vico.core.entry.ChartEntryModelProducer
 import com.patrykandpatrick.vico.core.entry.entryModelOf
 import com.tracker.app.data.Task
 import com.tracker.app.data.Log
+import com.tracker.app.ui.component.EditTimeDialog
 import com.tracker.app.ui.component.SwipeableLogItem
 import com.tracker.app.ui.theme.CreamyBackground
 import com.tracker.app.ui.theme.TaskColor
@@ -52,6 +53,7 @@ fun TaskDetailScreen(
     
     var isEditMode by remember { mutableStateOf(false) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
+    var editingLog by remember { mutableStateOf<Log?>(null) }
     
     var editStep by remember { mutableStateOf(task.step.toString()) }
     var editDescription by remember { mutableStateOf(task.description) }
@@ -178,12 +180,25 @@ fun TaskDetailScreen(
                         LogsSection(
                             task = task,
                             logs = logs,
-                            onDeleteLog = { viewModel.deleteLog(it) }
+                            onDeleteLog = { viewModel.deleteLog(it) },
+                            onEditLog = { editingLog = it }
                         )
                     }
                 }
             }
         }
+    }
+    
+    // 时间编辑对话框
+    editingLog?.let { log ->
+        EditTimeDialog(
+            log = log,
+            onDismiss = { editingLog = null },
+            onConfirm = { newTimestamp ->
+                viewModel.updateLog(log.copy(timestamp = newTimestamp))
+                editingLog = null
+            }
+        )
     }
     
     if (showDeleteConfirm) {
@@ -277,7 +292,7 @@ fun TaskStatsCard(task: Task, logs: List<Log>) {
                 .padding(24.dp),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            StatItem("Total", totalCount.toString())
+            StatItemWithUnit("Total", totalCount.toString(), task.unit)
             StatItem("Days", activeDays.toString())
             StatItem("Step", task.step.toString())
         }
@@ -298,6 +313,26 @@ fun StatItem(label: String, value: String) {
         )
         Text(
             text = label,
+            fontSize = 12.sp,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+        )
+    }
+}
+
+@Composable
+fun StatItemWithUnit(label: String, value: String, unit: String) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        Text(
+            text = value,
+            fontSize = 28.sp,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        Text(
+            text = "$label ($unit)",
             fontSize = 12.sp,
             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
         )
@@ -417,7 +452,8 @@ fun TrendChartCard(task: Task, logs: List<Log>) {
 fun LogsSection(
     task: Task,
     logs: List<Log>,
-    onDeleteLog: (Log) -> Unit
+    onDeleteLog: (Log) -> Unit,
+    onEditLog: (Log) -> Unit
 ) {
     val groupedLogs = remember(logs) {
         logs.groupBy { DateUtils.formatDate(it.timestamp) }
@@ -519,7 +555,8 @@ fun LogsSection(
                             dayLogs.forEach { log ->
                                 SwipeableLogItem(
                                     log = log,
-                                    onDelete = { onDeleteLog(log) }
+                                    onDelete = { onDeleteLog(log) },
+                                    onEdit = { onEditLog(log) }
                                 )
                             }
                         }

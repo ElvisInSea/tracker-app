@@ -57,6 +57,7 @@ fun TimelineScreen(
         LogWithTask(
             log = log,
             taskName = task?.name ?: "Unknown Task",
+            unit = task?.unit ?: "",
             colorObj = try {
                 val colorIndex = task?.colorIndex ?: 0
                 if (TaskColors.isEmpty()) {
@@ -364,12 +365,29 @@ private fun TimelineItem(
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
-                Text(
-                    text = "+${logWithTask.log.amount}",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = logWithTask.colorObj.text
-                )
+                Column(
+                    horizontalAlignment = Alignment.End
+                ) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.Bottom
+                    ) {
+                        Text(
+                            text = "+${logWithTask.log.amount}",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = logWithTask.colorObj.text
+                        )
+                        if (logWithTask.unit.isNotEmpty()) {
+                            Text(
+                                text = logWithTask.unit,
+                                fontSize = 10.sp,
+                                color = logWithTask.colorObj.text.copy(alpha = 0.6f),
+                                modifier = Modifier.padding(bottom = 2.dp)
+                            )
+                        }
+                    }
+                }
             }
         }
     }
@@ -378,6 +396,7 @@ private fun TimelineItem(
 private data class LogWithTask(
     val log: Log,
     val taskName: String,
+    val unit: String,
     val colorObj: com.tracker.app.ui.theme.TaskColor
 )
 

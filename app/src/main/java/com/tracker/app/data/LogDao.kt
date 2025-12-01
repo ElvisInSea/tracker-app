@@ -20,6 +20,9 @@ interface LogDao {
     @Insert
     suspend fun insertLog(log: Log)
     
+    @Update
+    suspend fun updateLog(log: Log)
+    
     @Delete
     suspend fun deleteLog(log: Log)
     

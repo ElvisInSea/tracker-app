@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -23,10 +24,9 @@ import com.tracker.app.util.DateUtils
 @Composable
 fun SwipeableLogItem(
     log: Log,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    onEdit: () -> Unit
 ) {
-    // 使用 log.id 作为 key，确保每个 log 都有独立的状态
-    // 这样删除后，其他项目不会复用被删除项目的滑动状态
     var offsetX by remember(log.id) { mutableStateOf(0f) }
     val animatedOffset by animateFloatAsState(
         targetValue = offsetX,
@@ -34,29 +34,58 @@ fun SwipeableLogItem(
         label = "swipe"
     )
     
+    val maxOffset = 120f
+    
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .height(56.dp)
+            .clip(RoundedCornerShape(16.dp))
     ) {
-        // 删除按钮背景
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .align(Alignment.CenterEnd)
-                .clip(RoundedCornerShape(16.dp))
-                .background(MaterialTheme.colorScheme.errorContainer),
-            contentAlignment = Alignment.CenterEnd
-        ) {
-            IconButton(onClick = onDelete) {
-                Icon(
-                    Icons.Default.Delete,
-                    contentDescription = "Delete",
-                    tint = MaterialTheme.colorScheme.onErrorContainer
-                )
+        // --- 修复开始 ---
+        // 只有当向右滑动 (offset > 0) 时，才显示编辑背景
+        if (animatedOffset > 0) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.primaryContainer),
+                contentAlignment = Alignment.CenterStart
+            ) {
+                IconButton(onClick = {
+                    offsetX = 0f
+                    onEdit()
+                }) {
+                    Icon(
+                        Icons.Default.Edit,
+                        contentDescription = "Edit Time",
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
             }
         }
-        
+
+        // 只有当向左滑动 (offset < 0) 时，才显示删除背景
+        if (animatedOffset < 0) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.errorContainer),
+                contentAlignment = Alignment.CenterEnd
+            ) {
+                IconButton(onClick = {
+                    offsetX = 0f
+                    onDelete()
+                }) {
+                    Icon(
+                        Icons.Default.Delete,
+                        contentDescription = "Delete",
+                        tint = MaterialTheme.colorScheme.onErrorContainer
+                    )
+                }
+            }
+        }
+        // --- 修复结束 ---
+
         // 内容卡片
         Card(
             modifier = Modifier
@@ -65,10 +94,17 @@ fun SwipeableLogItem(
                 .pointerInput(log.id) {
                     detectHorizontalDragGestures(
                         onDragEnd = {
-                            offsetX = if (offsetX < -100f) -120f else 0f
+                            // 逻辑修正：
+                            // offsetX > 0 代表向右滑，卡片右移，露出左侧 (编辑)
+                            // offsetX < 0 代表向左滑，卡片左移，露出右侧 (删除)
+                            offsetX = when {
+                                offsetX > 50f -> maxOffset   // 阈值设小一点，体验更好
+                                offsetX < -50f -> -maxOffset
+                                else -> 0f
+                            }
                         }
                     ) { _, dragAmount ->
-                        val newOffset = (offsetX + dragAmount).coerceIn(-120f, 0f)
+                        val newOffset = (offsetX + dragAmount).coerceIn(-maxOffset, maxOffset)
                         offsetX = newOffset
                     }
                 },
@@ -84,24 +120,12 @@ fun SwipeableLogItem(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .width(2.dp)
-                            .height(32.dp)
-                            .clip(RoundedCornerShape(1.dp))
-                            .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f))
-                    )
-                    Text(
-                        text = DateUtils.formatTime(log.timestamp),
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+                Text(
+                    text = DateUtils.formatTime(log.timestamp),
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
                 Text(
                     text = "+${log.amount}",
                     fontSize = 16.sp,
