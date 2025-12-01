@@ -174,7 +174,7 @@ Issues and Pull Requests are welcome!
 Please check [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md) for detailed release checklist before publishing.
 
 ### Version Information
-- Current Version: 1.0
+- Current Version: 1.1
 - Minimum Android Version: Android 7.0 (API 24)
 - Target Android Version: Android 14 (API 34)
 
