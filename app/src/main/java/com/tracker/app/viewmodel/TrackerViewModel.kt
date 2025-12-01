@@ -1,6 +1,6 @@
 package com.tracker.app.viewmodel
 
-import android.util.Log as AndroidLog
+import com.tracker.app.util.LogUtils
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -95,11 +95,11 @@ class TrackerViewModel(private val database: AppDatabase) : ViewModel() {
     private val checkingInTasks = mutableSetOf<String>()
     
     fun checkIn(taskId: String, amount: Int) {
-        AndroidLog.d("TrackerViewModel", "checkIn called: taskId=$taskId, amount=$amount")
+        LogUtils.d("TrackerViewModel", "checkIn called: taskId=$taskId, amount=$amount")
         
         // 验证参数有效性
         if (taskId.isBlank() || amount <= 0) {
-            AndroidLog.w("TrackerViewModel", "checkIn: Invalid parameters, returning early")
+            LogUtils.w("TrackerViewModel", "checkIn: Invalid parameters, returning early")
             return
         }
         
@@ -108,34 +108,34 @@ class TrackerViewModel(private val database: AppDatabase) : ViewModel() {
                 // 防止同一个事务被重复打卡
                 checkInMutex.withLock {
                     if (checkingInTasks.contains(taskId)) {
-                        AndroidLog.w("TrackerViewModel", "checkIn: Already checking in task $taskId, skipping")
+                        LogUtils.w("TrackerViewModel", "checkIn: Already checking in task $taskId, skipping")
                         return@launch
                     }
                     checkingInTasks.add(taskId)
-                    AndroidLog.d("TrackerViewModel", "checkIn: Added task $taskId to checking set")
+                    LogUtils.d("TrackerViewModel", "checkIn: Added task $taskId to checking set")
                 }
                 
                 try {
-                    AndroidLog.d("TrackerViewModel", "checkIn: Fetching task from database")
+                    LogUtils.d("TrackerViewModel", "checkIn: Fetching task from database")
                     // 验证事务是否存在
                     val task = taskDao.getTaskById(taskId)
                     if (task == null) {
-                        AndroidLog.w("TrackerViewModel", "checkIn: Task not found: $taskId")
+                        LogUtils.w("TrackerViewModel", "checkIn: Task not found: $taskId")
                         return@launch
                     }
-                    AndroidLog.d("TrackerViewModel", "checkIn: Task found: ${task.name}, target=${task.target}")
+                    LogUtils.d("TrackerViewModel", "checkIn: Task found: ${task.name}, target=${task.target}")
                     
                     // 验证amount值，防止溢出
                     val safeAmount = amount.coerceAtLeast(0).coerceAtMost(Int.MAX_VALUE)
                     if (safeAmount <= 0) {
-                        AndroidLog.w("TrackerViewModel", "checkIn: Invalid safeAmount: $safeAmount")
+                        LogUtils.w("TrackerViewModel", "checkIn: Invalid safeAmount: $safeAmount")
                         return@launch
                     }
-                    AndroidLog.d("TrackerViewModel", "checkIn: Safe amount: $safeAmount")
+                    LogUtils.d("TrackerViewModel", "checkIn: Safe amount: $safeAmount")
                     
                     val logId = IdGenerator.generateId()
                     val timestamp = System.currentTimeMillis()
-                    AndroidLog.d("TrackerViewModel", "checkIn: Creating log: id=$logId, timestamp=$timestamp")
+                    LogUtils.d("TrackerViewModel", "checkIn: Creating log: id=$logId, timestamp=$timestamp")
                     
                     val log = Log(
                         id = logId,
@@ -144,22 +144,22 @@ class TrackerViewModel(private val database: AppDatabase) : ViewModel() {
                         timestamp = timestamp
                     )
                     
-                    AndroidLog.d("TrackerViewModel", "checkIn: Inserting log into database")
+                    LogUtils.d("TrackerViewModel", "checkIn: Inserting log into database")
                     logDao.insertLog(log)
-                    AndroidLog.d("TrackerViewModel", "checkIn: Successfully inserted log")
+                    LogUtils.d("TrackerViewModel", "checkIn: Successfully inserted log")
                     
                 } catch (e: Exception) {
                     // 捕获所有异常，防止崩溃
-                    AndroidLog.e("TrackerViewModel", "checkIn: Exception in try block", e)
+                    LogUtils.e("TrackerViewModel", "checkIn: Exception in try block", e)
                     e.printStackTrace()
                 } finally {
                     checkInMutex.withLock {
                         checkingInTasks.remove(taskId)
-                        AndroidLog.d("TrackerViewModel", "checkIn: Removed task $taskId from checking set")
+                        LogUtils.d("TrackerViewModel", "checkIn: Removed task $taskId from checking set")
                     }
                 }
             } catch (e: Exception) {
-                AndroidLog.e("TrackerViewModel", "checkIn: Exception in coroutine", e)
+                LogUtils.e("TrackerViewModel", "checkIn: Exception in coroutine", e)
                 e.printStackTrace()
                 // 确保在异常情况下也清理状态
                 try {
@@ -167,7 +167,7 @@ class TrackerViewModel(private val database: AppDatabase) : ViewModel() {
                         checkingInTasks.remove(taskId)
                     }
                 } catch (cleanupException: Exception) {
-                    AndroidLog.e("TrackerViewModel", "checkIn: Exception during cleanup", cleanupException)
+                    LogUtils.e("TrackerViewModel", "checkIn: Exception during cleanup", cleanupException)
                 }
             }
         }

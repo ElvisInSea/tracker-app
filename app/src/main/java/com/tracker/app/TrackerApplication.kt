@@ -2,6 +2,7 @@ package com.tracker.app
 
 import android.app.Application
 import android.util.Log
+import com.tracker.app.util.LogUtils
 import java.io.PrintWriter
 import java.io.StringWriter
 
@@ -20,7 +21,7 @@ class TrackerApplication : Application() {
             handleUncaughtException(thread, exception)
         }
         
-        Log.d("TrackerApplication", "Application started, global exception handler installed")
+        LogUtils.d("TrackerApplication", "Application started, global exception handler installed")
     }
     
     private fun handleUncaughtException(thread: Thread, exception: Throwable) {
@@ -41,18 +42,15 @@ class TrackerApplication : Application() {
                 ============================================
             """.trimIndent()
             
-            // 记录到 Logcat
-            Log.e("TrackerApp", "CRASH: ${exception.javaClass.simpleName}: ${exception.message}")
-            Log.e("TrackerApp", "Stack trace:", exception)
+            // 记录到 Logcat（错误日志始终输出）
+            LogUtils.e("TrackerApp", "CRASH: ${exception.javaClass.simpleName}: ${exception.message}")
+            LogUtils.e("TrackerApp", "Stack trace:", exception)
             
             // 打印完整错误报告
-            Log.e("TrackerApp", errorReport)
-            
-            // 打印到控制台（如果通过 adb 连接）
-            println(errorReport)
+            LogUtils.e("TrackerApp", errorReport)
             
         } catch (e: Exception) {
-            Log.e("TrackerApp", "Error in exception handler", e)
+            LogUtils.e("TrackerApp", "Error in exception handler", e)
         } finally {
             // 调用系统默认处理器（会显示崩溃对话框）
             defaultExceptionHandler?.uncaughtException(thread, exception)

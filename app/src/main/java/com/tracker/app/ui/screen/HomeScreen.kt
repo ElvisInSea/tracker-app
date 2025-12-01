@@ -1,6 +1,6 @@
 package com.tracker.app.ui.screen
 
-import android.util.Log as AndroidLog
+import com.tracker.app.util.LogUtils
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -226,19 +226,19 @@ fun HomeScreen(
                                     logs = logs.filter { it.taskId == task.id },
                                     onCheckIn = { 
                                         try {
-                                            AndroidLog.d("HomeScreen", "onCheckIn called for task: ${task.id}, name: ${task.name}")
+                                            LogUtils.d("HomeScreen", "onCheckIn called for task: ${task.id}, name: ${task.name}")
                                             val step = task.step.coerceAtLeast(1).coerceAtMost(Int.MAX_VALUE)
-                                            AndroidLog.d("HomeScreen", "Calculated step: $step (original: ${task.step})")
+                                            LogUtils.d("HomeScreen", "Calculated step: $step (original: ${task.step})")
                                             if (task.id.isNotBlank() && step > 0) {
-                                                AndroidLog.d("HomeScreen", "Calling viewModel.checkIn with taskId=${task.id}, step=$step")
+                                                LogUtils.d("HomeScreen", "Calling viewModel.checkIn with taskId=${task.id}, step=$step")
                                                 viewModel.checkIn(task.id, step)
-                                                AndroidLog.d("HomeScreen", "viewModel.checkIn call completed")
+                                                LogUtils.d("HomeScreen", "viewModel.checkIn call completed")
                                             } else {
-                                                AndroidLog.w("HomeScreen", "onCheckIn: Invalid parameters, taskId=${task.id}, step=$step")
+                                                LogUtils.w("HomeScreen", "onCheckIn: Invalid parameters, taskId=${task.id}, step=$step")
                                             }
                                         } catch (e: Exception) {
                                             // 捕获异常，防止崩溃
-                                            AndroidLog.e("HomeScreen", "onCheckIn: Exception occurred", e)
+                                            LogUtils.e("HomeScreen", "onCheckIn: Exception occurred", e)
                                             e.printStackTrace()
                                         }
                                     },

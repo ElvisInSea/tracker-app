@@ -1,3 +1,6 @@
+import java.util.Properties
+import java.io.FileInputStream
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -28,9 +31,49 @@ android {
         }
     }
 
+    signingConfigs {
+        create("release") {
+            // 从 local.properties 读取签名配置
+            val keystorePropertiesFile = rootProject.file("local.properties")
+            if (keystorePropertiesFile.exists()) {
+                val keystoreProperties = Properties()
+                FileInputStream(keystorePropertiesFile).use {
+                    keystoreProperties.load(it)
+                }
+                
+                val keystorePath = keystoreProperties.getProperty("keystore.path") ?: ""
+                // 如果路径是相对路径，则相对于项目根目录
+                storeFile = if (keystorePath.isNotEmpty()) {
+                    val keystoreFile = rootProject.file(keystorePath)
+                    if (keystoreFile.exists()) keystoreFile else file(keystorePath)
+                } else {
+                    file("")
+                }
+                storePassword = keystoreProperties.getProperty("keystore.password") ?: ""
+                keyAlias = keystoreProperties.getProperty("keystore.alias") ?: ""
+                keyPassword = keystoreProperties.getProperty("keystore.keyPassword") ?: ""
+            }
+        }
+    }
+
     buildTypes {
+        // Debug 构建类型（开发阶段使用）
+        // 默认配置：不混淆、不压缩资源、使用debug签名、BuildConfig.DEBUG = true
+        debug {
+            // Debug版本保持默认配置，便于开发和调试
+            // - isMinifyEnabled = false (默认)
+            // - isShrinkResources = false (默认)
+            // - BuildConfig.DEBUG = true (默认)
+            // LogUtils 会根据 BuildConfig.DEBUG 自动输出所有日志
+        }
+        
+        // Release 构建类型（发布时使用）
         release {
-            isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("release")
+            isMinifyEnabled = true  // 仅Release版本启用代码混淆
+            isShrinkResources = true  // 仅Release版本启用资源压缩
+            // BuildConfig.DEBUG = false (默认)
+            // LogUtils 在Release版本中只输出错误日志
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -49,6 +92,7 @@ android {
     
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     
     packaging {

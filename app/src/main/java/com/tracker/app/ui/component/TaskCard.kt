@@ -1,6 +1,6 @@
 package com.tracker.app.ui.component
 
-import android.util.Log as AndroidLog
+import com.tracker.app.util.LogUtils
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -37,10 +37,10 @@ fun TaskCard(
     val todayStr = remember(task.id) {
         try {
             val str = DateUtils.formatDate(System.currentTimeMillis())
-            AndroidLog.d("TaskCard", "TaskCard[${task.id}]: todayStr=$str")
+            LogUtils.d("TaskCard", "TaskCard[${task.id}]: todayStr=$str")
             str
         } catch (e: Exception) {
-            AndroidLog.e("TaskCard", "TaskCard[${task.id}]: Error getting todayStr", e)
+            LogUtils.e("TaskCard", "TaskCard[${task.id}]: Error getting todayStr", e)
             ""
         }
     }
@@ -48,22 +48,22 @@ fun TaskCard(
     val todayLogs = remember(logs, todayStr) {
         try {
             if (todayStr.isBlank()) {
-                AndroidLog.d("TaskCard", "TaskCard[${task.id}]: todayStr is blank, returning empty list")
+                LogUtils.d("TaskCard", "TaskCard[${task.id}]: todayStr is blank, returning empty list")
                 emptyList()
             } else {
                 val filtered = logs.filter { 
                     try {
                         DateUtils.formatDate(it.timestamp) == todayStr
                     } catch (e: Exception) {
-                        AndroidLog.e("TaskCard", "TaskCard[${task.id}]: Error filtering log ${it.id}", e)
+                        LogUtils.e("TaskCard", "TaskCard[${task.id}]: Error filtering log ${it.id}", e)
                         false
                     }
                 }
-                AndroidLog.d("TaskCard", "TaskCard[${task.id}]: Found ${filtered.size} logs for today")
+                LogUtils.d("TaskCard", "TaskCard[${task.id}]: Found ${filtered.size} logs for today")
                 filtered
             }
         } catch (e: Exception) {
-            AndroidLog.e("TaskCard", "TaskCard[${task.id}]: Error in todayLogs remember", e)
+            LogUtils.e("TaskCard", "TaskCard[${task.id}]: Error in todayLogs remember", e)
             emptyList()
         }
     }
@@ -73,23 +73,23 @@ fun TaskCard(
             val sum = todayLogs.sumOf { it.amount.toLong().coerceAtLeast(0) }
             // 防止溢出，如果超过Int最大值，则使用Int最大值
             val result = if (sum > Int.MAX_VALUE) {
-                AndroidLog.w("TaskCard", "TaskCard[${task.id}]: Sum overflow, using Int.MAX_VALUE")
+                LogUtils.w("TaskCard", "TaskCard[${task.id}]: Sum overflow, using Int.MAX_VALUE")
                 Int.MAX_VALUE
             } else {
                 sum.toInt().coerceAtLeast(0)
             }
-            AndroidLog.d("TaskCard", "TaskCard[${task.id}]: todayAmount=$result (sum=$sum)")
+            LogUtils.d("TaskCard", "TaskCard[${task.id}]: todayAmount=$result (sum=$sum)")
             result
         } catch (e: Exception) {
             // 捕获所有异常，防止崩溃
-            AndroidLog.e("TaskCard", "TaskCard[${task.id}]: Error calculating todayAmount", e)
+            LogUtils.e("TaskCard", "TaskCard[${task.id}]: Error calculating todayAmount", e)
             0
         }
     }
     
     val isDone = remember(task.target, todayAmount) {
         val done = task.target > 0 && todayAmount >= task.target
-        AndroidLog.d("TaskCard", "TaskCard[${task.id}]: isDone=$done (target=${task.target}, todayAmount=$todayAmount)")
+        LogUtils.d("TaskCard", "TaskCard[${task.id}]: isDone=$done (target=${task.target}, todayAmount=$todayAmount)")
         done
     }
     
@@ -115,7 +115,7 @@ fun TaskCard(
                 }
             }
         } catch (e: Exception) {
-            AndroidLog.e("TaskCard", "TaskCard[${task.id}]: Error calculating colorObj", e)
+            LogUtils.e("TaskCard", "TaskCard[${task.id}]: Error calculating colorObj", e)
             // 如果出现任何异常，使用默认颜色
             TaskColor(
                 bg = androidx.compose.ui.graphics.Color(0xFFFFEDD5),
@@ -216,12 +216,12 @@ fun TaskCard(
                     IconButton(
                         onClick = {
                             try {
-                                AndroidLog.d("TaskCard", "TaskCard[${task.id}]: Check-in button clicked, isDone=$isDone, todayAmount=$todayAmount, target=${task.target}")
+                                LogUtils.d("TaskCard", "TaskCard[${task.id}]: Check-in button clicked, isDone=$isDone, todayAmount=$todayAmount, target=${task.target}")
                                 onCheckIn()
-                                AndroidLog.d("TaskCard", "TaskCard[${task.id}]: Check-in callback completed")
+                                LogUtils.d("TaskCard", "TaskCard[${task.id}]: Check-in callback completed")
                             } catch (e: Exception) {
                                 // 捕获异常，防止崩溃
-                                AndroidLog.e("TaskCard", "TaskCard[${task.id}]: Exception in check-in button onClick", e)
+                                LogUtils.e("TaskCard", "TaskCard[${task.id}]: Exception in check-in button onClick", e)
                                 e.printStackTrace()
                             }
                         },
